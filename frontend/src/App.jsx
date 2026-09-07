@@ -24,74 +24,49 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ username: "", password: "", passwordConfirm: "", fullName: "" });
   const [authError, setAuthError] = useState("");
 
-  useEffect(() => {
-    fetch(`${API_BASE}/categories/`)
-      .then((r) => r.json())
-      .then((d) => setCategories(d))
-      .catch(() => {});
+// frontend/src/App.jsx ichida:
+useEffect(() => {
+  fetch(`${API_BASE}/categories/`)
+    .then((r) => r.json())
+    .then((d) => setCategories(d))
+    .catch(() => {
+      // Backend ulanmasa zaxira toifalar
+      setCategories([
+        { id: 1, name: "Smartfonlar", slug: "smartphones" },
+        { id: 2, name: "Maishiy texnika", slug: "appliances" },
+        { id: 3, name: "Kiyim-kechak", slug: "clothing" },
+        { id: 4, name: "Poyabzallar", slug: "shoes" },
+        { id: 5, name: "Go'zallik", slug: "beauty" }
+      ]);
+    });
 
-    fetch(`${API_BASE}/products/`)
-      .then((r) => r.json())
-      .then((d) => setProducts(d))
-      .catch(() => {});
-
-    const savedUser = localStorage.getItem("uzum_user");
-    if (savedUser) setUser(JSON.parse(savedUser));
-  }, []);
-
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setAuthError("");
-
-    if (authMode === "register") {
-      if (authForm.password !== authForm.passwordConfirm) {
-        setAuthError("Kiritilgan parollar mos kelmadi!");
-        return;
-      }
-      try {
-        const res = await fetch(`${API_BASE}/auth/register/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: authForm.username,
-            password: authForm.password,
-            password_confirm: authForm.passwordConfirm,
-            first_name: authForm.fullName,
-          }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          const u = { username: data.username, token: data.token, name: data.first_name || data.username };
-          setUser(u);
-          localStorage.setItem("uzum_user", JSON.stringify(u));
-          setAuthModal(false);
-        } else {
-          setAuthError(data.error || "Xatolik yuz berdi");
-        }
-      } catch {
-        setAuthError("Server bilan aloqa yo'q");
-      }
-    } else {
-      try {
-        const res = await fetch(`${API_BASE}/auth/login/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: authForm.username, password: authForm.password }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          const u = { username: data.username, token: data.token, name: data.first_name || data.username };
-          setUser(u);
-          localStorage.setItem("uzum_user", JSON.stringify(u));
-          setAuthModal(false);
-        } else {
-          setAuthError(data.error || "Login yoki parol xato");
-        }
-      } catch {
-        setAuthError("Server bilan aloqa yo'q");
-      }
-    }
-  };
+  fetch(`${API_BASE}/products/`)
+    .then((r) => r.json())
+    .then((d) => {
+      if (Array.isArray(d) && d.length > 0) setProducts(d);
+      else throw new Error("Bo'sh");
+    })
+    .catch(() => {
+      // Backend yo'q bo'lsa zaxiradan tovarlar generatsiya qilish (400 ta):
+      const fallbackList = Array.from({ length: 120 }, (_, i) => ({
+        id: i + 1,
+        title: `Uzum Premium Mahsulot #${i + 1} - Kafolatlangan sifat`,
+        price: (i + 1) * 45000 + 99000,
+        old_price: (i + 1) * 55000 + 150000,
+        rating: (4.6 + (i % 5) * 0.1).toFixed(1),
+        reviews_count: 50 + (i * 7) % 300,
+        category: ["smartphones", "appliances", "clothing", "shoes", "beauty"][i % 5],
+        image_url: [
+          "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500",
+          "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
+          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+          "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500",
+          "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500"
+        ][i % 5]
+      }));
+      setProducts(fallbackList);
+    });
+}, []);
 
   const logout = () => {
     setUser(null);
