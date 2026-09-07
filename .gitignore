@@ -1,0 +1,8 @@
+node_modules/
+frontend/node_modules/
+venv/
+backend/venv/
+*.sqlite3
+backend/*.sqlite3
+__pycache__/
+dist/
